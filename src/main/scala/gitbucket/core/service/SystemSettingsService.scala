@@ -49,6 +49,7 @@ trait SystemSettingsService {
           ldap.keystore.foreach(x => props.setProperty(LdapKeystore, x))
         }
       }
+      props.setProperty(MaxDownloadSize, settings.maxDownloadSize.toString)
       using(new java.io.FileOutputStream(GitBucketConf)){ out =>
         props.store(out, null)
       }
@@ -102,7 +103,8 @@ trait SystemSettingsService {
             getOptionValue(props, LdapKeystore, None)))
         } else {
           None
-        }
+        },
+        getValue[Long](props, MaxDownloadSize, 1024 * 1000)
       )
     }
   }
@@ -124,7 +126,8 @@ object SystemSettingsService {
     sshPort: Option[Int],
     smtp: Option[Smtp],
     ldapAuthentication: Boolean,
-    ldap: Option[Ldap]){
+    ldap: Option[Ldap],
+    maxDownloadSize: Long){
     def baseUrl(request: HttpServletRequest): String = baseUrl.getOrElse {
       defining(request.getRequestURL.toString){ url =>
         url.substring(0, url.length - (request.getRequestURI.length - request.getContextPath.length))
@@ -160,6 +163,7 @@ object SystemSettingsService {
   val DefaultLdapPort = 389
 
   private val BaseURL = "base_url"
+  private val MaxDownloadSize = "max_download_size"
   private val Information = "information"
   private val AllowAccountRegistration = "allow_account_registration"
   private val AllowAnonymousAccess = "allow_anonymous_access"

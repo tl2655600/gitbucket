@@ -46,7 +46,8 @@ trait SystemSettingsControllerBase extends ControllerBase {
         "tls"                      -> trim(label("Enable TLS", optional(boolean()))),
         "ssl"                      -> trim(label("Enable SSL", optional(boolean()))),
         "keystore"                 -> trim(label("Keystore", optional(text())))
-    )(Ldap.apply))
+    )(Ldap.apply)),
+    "maxDownloadSize"          -> trim(label("Max Download Size", long()))
   )(SystemSettings.apply).verifying { settings =>
     if(settings.ssh && settings.baseUrl.isEmpty){
       Seq("baseUrl" -> "Base URL is required if SSH access is enabled.")
