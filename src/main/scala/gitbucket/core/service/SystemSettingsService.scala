@@ -207,8 +207,9 @@ object SystemSettingsService {
 
   private def convertType[A: ClassTag](value: String) =
     defining(implicitly[ClassTag[A]].runtimeClass){ c =>
-      if(c == classOf[Boolean])  value.toBoolean
-      else if(c == classOf[Int]) value.toInt
+      if     (c == classOf[Boolean]) value.toBoolean
+      else if(c == classOf[Int]    ) value.toInt
+      else if(c == classOf[Long]   ) value.toLong
       else value
     }
 
