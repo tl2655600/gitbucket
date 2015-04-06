@@ -30,17 +30,6 @@
             If the base URL is empty, GitBucket generates URL from request information.
             You can use this property to adjust URL difference between the reverse proxy and GitBucket.
           </p>
-            <!--====================================================================-->
-            <!-- Max download size -->
-            <!--====================================================================-->
-          <hr>
-          <label><span class="strong">Max download size</span> (bytes)</label>
-          <fieldset>
-            <div class="controls">
-              <input type="text" name="maxDownloadSize" id="maxDownloadSize" style="width: 400px" value="@settings.maxDownloadSize"/>
-              <span id="error-maxDownloadSize" class="error"></span>
-            </div>
-          </fieldset>
           <!--====================================================================-->
           <!-- Information -->
           <!--====================================================================-->
@@ -280,6 +269,17 @@
               </div>
             </div>
           </div>
+          <!--====================================================================-->
+          <!-- Max download size -->
+          <!--====================================================================-->
+          <hr>
+          <label><span class="strong">Max download size</span> (bytes)</label>
+          <fieldset>
+            <div class="controls">
+              <input type="text" name="maxDownloadSize" id="maxDownloadSize" style="width: 200px" value="@settings.maxDownloadSize"/>
+              <span id="error-maxDownloadSize" class="error"></span>
+            </div>
+          </fieldset>
         </div>
       </div>
       <fieldset>
