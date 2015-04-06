@@ -223,7 +223,7 @@ trait WikiService {
               builder.add(JGitUtil.createDirCacheEntry(path, tree.getEntryFileMode, tree.getEntryObjectId))
             } else {
               created = false
-              updated = JGitUtil.getContentFromId(git, tree.getEntryObjectId, true).map(new String(_, "UTF-8") != content).getOrElse(false)
+              updated = JGitUtil.getContentFromId(git, tree.getEntryObjectId, true, 0).map(new String(_, "UTF-8") != content).getOrElse(false)
             }
           }
         }

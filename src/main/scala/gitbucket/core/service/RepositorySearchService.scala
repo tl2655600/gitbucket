@@ -30,17 +30,17 @@ trait RepositorySearchService { self: IssuesService =>
         getHighlightText(content, query)._1)
     }
 
-  def countFiles(owner: String, repository: String, query: String): Int =
+  def countFiles(owner: String, repository: String, query: String, maxFetchSize: Long): Int =
     using(Git.open(getRepositoryDir(owner, repository))){ git =>
-      if(JGitUtil.isEmpty(git)) 0 else searchRepositoryFiles(git, query).length
+      if(JGitUtil.isEmpty(git)) 0 else searchRepositoryFiles(git, query, maxFetchSize).length
     }
 
-  def searchFiles(owner: String, repository: String, query: String): List[FileSearchResult] =
+  def searchFiles(owner: String, repository: String, query: String, maxFetchSize: Long): List[FileSearchResult] =
     using(Git.open(getRepositoryDir(owner, repository))){ git =>
       if(JGitUtil.isEmpty(git)){
         Nil
       } else {
-        val files = searchRepositoryFiles(git, query)
+        val files = searchRepositoryFiles(git, query, maxFetchSize)
         val commits = JGitUtil.getLatestCommitFromPaths(git, files.map(_._1), "HEAD")
         files.map { case (path, text) =>
           val (highlightText, lineNumber)  = getHighlightText(text, query)
@@ -53,7 +53,7 @@ trait RepositorySearchService { self: IssuesService =>
       }
     }
 
-  private def searchRepositoryFiles(git: Git, query: String): List[(String, String)] = {
+  private def searchRepositoryFiles(git: Git, query: String, maxFetchSize: Long): List[(String, String)] = {
     val revWalk   = new RevWalk(git.getRepository)
     val objectId  = git.getRepository.resolve("HEAD")
     val revCommit = revWalk.parseCommit(objectId)
@@ -67,7 +67,7 @@ trait RepositorySearchService { self: IssuesService =>
     while (treeWalk.next()) {
       val mode = treeWalk.getFileMode(0)
       if(mode == FileMode.REGULAR_FILE || mode == FileMode.EXECUTABLE_FILE){
-        JGitUtil.getContentFromId(git, treeWalk.getObjectId(0), false).foreach { bytes =>
+        JGitUtil.getContentFromId(git, treeWalk.getObjectId(0), false, maxFetchSize).foreach { bytes =>
           if(FileUtil.isText(bytes)){
             val text      = StringUtil.convertFromByteArray(bytes)
             val lowerText = text.toLowerCase

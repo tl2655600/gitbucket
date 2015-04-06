@@ -431,7 +431,7 @@ trait PullRequestsControllerBase extends ControllerBase {
         helpers.date(commit1.commitTime) == view.helpers.date(commit2.commitTime)
       }
 
-      val diffs = JGitUtil.getDiffs(newGit, oldId.getName, newId.getName, true)
+      val diffs = JGitUtil.getDiffs(newGit, oldId.getName, newId.getName, true, 0)
 
       (commits, diffs)
     }

@@ -76,7 +76,7 @@ class GitBucketReceivePackFactory extends ReceivePackFactory[HttpServletRequest]
     val pusher = request.getAttribute(Keys.Request.UserName).asInstanceOf[String]
 
     logger.debug("requestURI: " + request.getRequestURI)
-    logger.debug("pusher:" + pusher)
+    logger.debug("pusher: " + pusher)
 
     defining(request.paths){ paths =>
       val owner      = paths(1)
@@ -101,7 +101,7 @@ import scala.collection.JavaConverters._
 class CommitLogHook(owner: String, repository: String, pusher: String, baseUrl: String)(implicit session: Session)
   extends PostReceiveHook with PreReceiveHook
   with RepositoryService with AccountService with IssuesService with ActivityService with PullRequestService with WebHookService
-  with WebHookPullRequestService {
+  with WebHookPullRequestService with SystemSettingsService {
   
   private val logger = LoggerFactory.getLogger(classOf[CommitLogHook])
   private var existIds: Seq[String] = Nil
@@ -126,9 +126,9 @@ class CommitLogHook(owner: String, repository: String, pusher: String, baseUrl: 
         commands.asScala.foreach { command =>
           logger.debug(s"commandType: ${command.getType}, refName: ${command.getRefName}")
           implicit val apiContext = api.JsonFormat.Context(baseUrl)
-          val refName = command.getRefName.split("/")
+          val refName    = command.getRefName.split("/")
           val branchName = refName.drop(2).mkString("/")
-          val commits = if (refName(1) == "tags") {
+          val commits    = if (refName(1) == "tags") {
             Nil
           } else {
             command.getType match {
@@ -139,7 +139,7 @@ class CommitLogHook(owner: String, repository: String, pusher: String, baseUrl: 
 
           // Retrieve all issue count in the repository
           val issueCount =
-            countIssue(IssueSearchCondition(state = "open"), false, owner -> repository) +
+            countIssue(IssueSearchCondition(state = "open"  ), false, owner -> repository) +
             countIssue(IssueSearchCondition(state = "closed"), false, owner -> repository)
 
           val repositoryInfo = getRepository(owner, repository, baseUrl).get
@@ -190,10 +190,13 @@ class CommitLogHook(owner: String, repository: String, pusher: String, baseUrl: 
           }
 
           // call web hook
+          val settings = loadSystemSettings()
           callWebHookOf(owner, repository, "push"){
-            for(pusherAccount <- getAccountByUserName(pusher);
-              ownerAccount   <- getAccountByUserName(owner)) yield {
-              WebHookPushPayload(git, pusherAccount, command.getRefName, repositoryInfo, newCommits, ownerAccount)
+            for(
+              pusherAccount <- getAccountByUserName(pusher);
+              ownerAccount  <- getAccountByUserName(owner)
+            ) yield {
+              WebHookPushPayload(git, pusherAccount, command.getRefName, repositoryInfo, newCommits, ownerAccount, settings.maxDownloadSize)
             }
           }
         }

@@ -171,7 +171,14 @@ trait RepositorySettingsControllerBase extends ControllerBase {
       getAccountByUserName(repository.owner).foreach { ownerAccount =>
         callWebHook("push",
           List(WebHook(repository.owner, repository.name, form.url)),
-          WebHookPushPayload(git, ownerAccount, "refs/heads/" + repository.repository.defaultBranch, repository, commits.toList, ownerAccount)
+          WebHookPushPayload(
+            git,
+            ownerAccount, "refs/heads/" + repository.repository.defaultBranch,
+            repository,
+            commits.toList,
+            ownerAccount,
+            context.settings.maxDownloadSize
+          )
         )
       }
       flash += "url"  -> form.url

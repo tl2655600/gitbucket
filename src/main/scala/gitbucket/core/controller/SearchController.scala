@@ -37,11 +37,11 @@ trait SearchControllerBase extends ControllerBase { self: RepositoryService
       target.toLowerCase match {
         case "issue" => html.issues(
           searchIssues(repository.owner, repository.name, query),
-          countFiles(repository.owner, repository.name, query),
+          countFiles(repository.owner, repository.name, query, context.settings.maxDownloadSize),
           query, page, repository)
 
         case _ => html.code(
-          searchFiles(repository.owner, repository.name, query),
+          searchFiles(repository.owner, repository.name, query, context.settings.maxDownloadSize),
           countIssues(repository.owner, repository.name, query),
           query, page, repository)
       }

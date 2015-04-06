@@ -192,14 +192,14 @@ object WebHookService {
 
   object WebHookPushPayload {
     def apply(git: Git, pusher: Account, refName: String, repositoryInfo: RepositoryInfo,
-              commits: List[CommitInfo], repositoryOwner: Account): WebHookPushPayload =
+              commits: List[CommitInfo], repositoryOwner: Account, maxFetchSize: Long): WebHookPushPayload =
       WebHookPushPayload(
         ApiUser(pusher),
         refName,
-        commits.map{ commit => ApiCommit(git, RepositoryName(repositoryInfo), commit) },
+        commits.map{ commit => ApiCommit(git, RepositoryName(repositoryInfo), commit, maxFetchSize) },
         ApiRepository(
           repositoryInfo,
-          owner= ApiUser(repositoryOwner)
+          owner = ApiUser(repositoryOwner)
         )
       )
   }

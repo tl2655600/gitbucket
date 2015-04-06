@@ -430,7 +430,8 @@ object JGitUtil {
   /**
    * Returns the tuple of diff of the given commit and the previous commit id.
    */
-  def getDiffs(git: Git, id: String, fetchContent: Boolean = true): (List[DiffInfo], Option[String]) = {
+  // TODO Set default value: fetchContent = true and maxFetchSize = 0
+  def getDiffs(git: Git, id: String, fetchContent: Boolean, maxFetchSize: Long): (List[DiffInfo], Option[String]) = {
     @scala.annotation.tailrec
     def getCommitLog(i: java.util.Iterator[RevCommit], logs: List[RevCommit]): List[RevCommit] =
       i.hasNext match {
@@ -451,7 +452,7 @@ object JGitUtil {
         } else {
           commits(1)
         }
-        (getDiffs(git, oldCommit.getName, id, fetchContent), Some(oldCommit.getName))
+        (getDiffs(git, oldCommit.getName, id, fetchContent, maxFetchSize), Some(oldCommit.getName))
 
       } else {
         // initial commit
@@ -463,7 +464,7 @@ object JGitUtil {
               DiffInfo(ChangeType.ADD, null, treeWalk.getPathString, None, None)
             } else {
               DiffInfo(ChangeType.ADD, null, treeWalk.getPathString, None,
-                JGitUtil.getContentFromId(git, treeWalk.getObjectId(0), false).filter(FileUtil.isText).map(convertFromByteArray))
+                JGitUtil.getContentFromId(git, treeWalk.getObjectId(0), false, maxFetchSize).filter(FileUtil.isText).map(convertFromByteArray))
             }))
           }
           (buffer.toList, None)
@@ -472,7 +473,7 @@ object JGitUtil {
     }
   }
 
-  def getDiffs(git: Git, from: String, to: String, fetchContent: Boolean): List[DiffInfo] = {
+  def getDiffs(git: Git, from: String, to: String, fetchContent: Boolean, maxFetchSize: Long): List[DiffInfo] = {
     val reader = git.getRepository.newObjectReader
     val oldTreeIter = new CanonicalTreeParser
     oldTreeIter.reset(reader, git.getRepository.resolve(from + "^{tree}"))
@@ -487,8 +488,8 @@ object JGitUtil {
         DiffInfo(diff.getChangeType, diff.getOldPath, diff.getNewPath, None, None)
       } else {
         DiffInfo(diff.getChangeType, diff.getOldPath, diff.getNewPath,
-          JGitUtil.getContentFromId(git, diff.getOldId.toObjectId, false).filter(FileUtil.isText).map(convertFromByteArray),
-          JGitUtil.getContentFromId(git, diff.getNewId.toObjectId, false).filter(FileUtil.isText).map(convertFromByteArray))
+          JGitUtil.getContentFromId(git, diff.getOldId.toObjectId, false, maxFetchSize).filter(FileUtil.isText).map(convertFromByteArray),
+          JGitUtil.getContentFromId(git, diff.getNewId.toObjectId, false, maxFetchSize).filter(FileUtil.isText).map(convertFromByteArray))
       }
     }.toList
   }
@@ -597,7 +598,7 @@ object JGitUtil {
    */
   def getSubmodules(git: Git, tree: RevTree): List[SubmoduleInfo] = {
     val repository = git.getRepository
-    getContentFromPath(git, tree, ".gitmodules", true).map { bytes =>
+    getContentFromPath(git, tree, ".gitmodules", true, 0).map { bytes =>
       (try {
         val config = new BlobBasedConfig(repository.getConfig(), bytes)
         config.getSubsections("submodule").asScala.map { module =>
@@ -621,9 +622,10 @@ object JGitUtil {
    * @param revTree the rev tree
    * @param path the path
    * @param fetchLargeFile if false then returns None for the large file
+   * @param maxFetchSize threshold of large file (If fetchLargeFile is true then this parameter is ignored)
    * @return the byte array of content or None if object does not exist
    */
-  def getContentFromPath(git: Git, revTree: RevTree, path: String, fetchLargeFile: Boolean): Option[Array[Byte]] = {
+  def getContentFromPath(git: Git, revTree: RevTree, path: String, fetchLargeFile: Boolean, maxFetchSize: Long): Option[Array[Byte]] = {
     @scala.annotation.tailrec
     def getPathObjectId(path: String, walk: TreeWalk): Option[ObjectId] = walk.next match {
       case true if(walk.getPathString == path) => Some(walk.getObjectId(0))
@@ -636,15 +638,15 @@ object JGitUtil {
       treeWalk.setRecursive(true)
       getPathObjectId(path, treeWalk)
     } flatMap { objectId =>
-      getContentFromId(git, objectId, fetchLargeFile)
+      getContentFromId(git, objectId, fetchLargeFile, maxFetchSize)
     }
   }
 
-  def getContentInfo(git: Git, path: String, objectId: ObjectId): ContentInfo = {
+  def getContentInfo(git: Git, path: String, objectId: ObjectId, maxFetchSize: Long): ContentInfo = {
     // Viewer
-    val large  = FileUtil.isLarge(git.getRepository.getObjectDatabase.open(objectId).getSize)
+    val large  = FileUtil.isLarge(git.getRepository.getObjectDatabase.open(objectId).getSize, maxFetchSize)
     val viewer = if(FileUtil.isImage(path)) "image" else if(large) "large" else "other"
-    val bytes  = if(viewer == "other") JGitUtil.getContentFromId(git, objectId, false) else None
+    val bytes  = if(viewer == "other") JGitUtil.getContentFromId(git, objectId, false, maxFetchSize) else None
 
     if(viewer == "other"){
       if(bytes.isDefined && FileUtil.isText(bytes.get)){
@@ -666,11 +668,12 @@ object JGitUtil {
    * @param git the Git object
    * @param id the object id
    * @param fetchLargeFile if false then returns None for the large file
+   * @param maxFetchSize threshold of large file (If fetchLargeFile is true then this parameter is ignored)
    * @return the byte array of content or None if object does not exist
    */
-  def getContentFromId(git: Git, id: ObjectId, fetchLargeFile: Boolean): Option[Array[Byte]] = try {
+  def getContentFromId(git: Git, id: ObjectId, fetchLargeFile: Boolean, maxFetchSize: Long): Option[Array[Byte]] = try {
     val loader = git.getRepository.getObjectDatabase.open(id)
-    if(fetchLargeFile == false && FileUtil.isLarge(loader.getSize)){
+    if(fetchLargeFile == false && FileUtil.isLarge(loader.getSize, maxFetchSize)){
       None
     } else {
       using(git.getRepository.getObjectDatabase){ db =>

@@ -218,7 +218,7 @@ trait RepositoryViewerControllerBase extends ControllerBase {
       getPathObjectId(git, path, revCommit).map { objectId =>
         val paths = path.split("/")
         html.editor(branch, repository, paths.take(paths.size - 1).toList, Some(paths.last),
-          JGitUtil.getContentInfo(git, path, objectId))
+          JGitUtil.getContentInfo(git, path, objectId, context.settings.maxDownloadSize))
       } getOrElse NotFound
     }
   })
@@ -231,7 +231,7 @@ trait RepositoryViewerControllerBase extends ControllerBase {
       getPathObjectId(git, path, revCommit).map { objectId =>
         val paths = path.split("/")
         html.delete(branch, repository, paths.take(paths.size - 1).toList, paths.last,
-          JGitUtil.getContentInfo(git, path, objectId))
+          JGitUtil.getContentInfo(git, path, objectId, context.settings.maxDownloadSize))
       } getOrElse NotFound
     }
   })
@@ -294,11 +294,11 @@ trait RepositoryViewerControllerBase extends ControllerBase {
       getPathObjectId(git, path, revCommit).map { objectId =>
         if(raw){
           // Download
-          defining(JGitUtil.getContentFromId(git, objectId, false).get){ bytes =>
+          defining(JGitUtil.getContentFromId(git, objectId, false, context.settings.maxDownloadSize).get){ bytes =>
             RawData(FileUtil.getContentType(path, bytes), bytes)
           }
         } else {
-          html.blob(id, repository, path.split("/").toList, JGitUtil.getContentInfo(git, path, objectId),
+          html.blob(id, repository, path.split("/").toList, JGitUtil.getContentInfo(git, path, objectId, context.settings.maxDownloadSize),
             new JGitUtil.CommitInfo(lastModifiedCommit), hasWritePermission(repository.owner, repository.name, context.loginAccount))
         }
       } getOrElse NotFound
@@ -313,7 +313,7 @@ trait RepositoryViewerControllerBase extends ControllerBase {
 
     using(Git.open(getRepositoryDir(repository.owner, repository.name))){ git =>
       defining(JGitUtil.getRevCommitFromId(git, git.getRepository.resolve(id))){ revCommit =>
-        JGitUtil.getDiffs(git, id) match { case (diffs, oldCommitId) =>
+        JGitUtil.getDiffs(git, id, true, 0) match { case (diffs, oldCommitId) =>
           html.commit(id, new JGitUtil.CommitInfo(revCommit),
             JGitUtil.getBranchesOfCommit(git, revCommit.getName),
             JGitUtil.getTagsOfCommit(git, revCommit.getName),
@@ -514,7 +514,7 @@ trait RepositoryViewerControllerBase extends ControllerBase {
             }.map { file =>
               val path = (file.name :: parentPath.reverse).reverse
               path -> StringUtil.convertFromByteArray(JGitUtil.getContentFromId(
-                Git.open(getRepositoryDir(repository.owner, repository.name)), file.id, true).get)
+                Git.open(getRepositoryDir(repository.owner, repository.name)), file.id, true, 0).get)
             }
 
             html.files(revision, repository,
@@ -589,7 +589,7 @@ trait RepositoryViewerControllerBase extends ControllerBase {
         val commit = new JGitUtil.CommitInfo(JGitUtil.getRevCommitFromId(git, commitId))
         callWebHookOf(repository.owner, repository.name, "push") {
           getAccountByUserName(repository.owner).map{ ownerAccount =>
-            WebHookPushPayload(git, loginAccount, headName, repository, List(commit), ownerAccount)
+            WebHookPushPayload(git, loginAccount, headName, repository, List(commit), ownerAccount, context.settings.maxDownloadSize)
           }
         }
       }
