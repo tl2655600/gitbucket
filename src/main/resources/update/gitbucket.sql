@@ -1,0 +1,403 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 192.168.1.2_3306
+Source Server Version : 50621
+Source Host           : 192.168.1.2:3306
+Source Database       : gitbucket
+
+Target Server Type    : MYSQL
+Target Server Version : 50621
+File Encoding         : 65001
+
+Date: 2015-04-21 11:22:15
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for ACCESS_TOKEN
+-- ----------------------------
+DROP TABLE IF EXISTS `ACCESS_TOKEN`;
+CREATE TABLE `ACCESS_TOKEN` (
+  `ACCESS_TOKEN_ID` int(11) NOT NULL AUTO_INCREMENT,
+  `TOKEN_HASH` varchar(40) NOT NULL,
+  `USER_NAME` varchar(100) NOT NULL,
+  `NOTE` text NOT NULL,
+  PRIMARY KEY (`ACCESS_TOKEN_ID`),
+  UNIQUE KEY `IDX_ACCESS_TOKEN_TOKEN_HASH` (`TOKEN_HASH`),
+  KEY `IDX_ACCESS_TOKEN_FK0` (`USER_NAME`),
+  CONSTRAINT `IDX_ACCESS_TOKEN_FK0` FOREIGN KEY (`USER_NAME`) REFERENCES `ACCOUNT` (`USER_NAME`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of ACCESS_TOKEN
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for ACCOUNT
+-- ----------------------------
+DROP TABLE IF EXISTS `ACCOUNT`;
+CREATE TABLE `ACCOUNT` (
+  `USER_NAME` varchar(100) NOT NULL,
+  `MAIL_ADDRESS` varchar(100) NOT NULL,
+  `PASSWORD` varchar(40) NOT NULL,
+  `ADMINISTRATOR` tinyint(1) NOT NULL,
+  `URL` varchar(200) DEFAULT NULL,
+  `REGISTERED_DATE` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `UPDATED_DATE` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `LAST_LOGIN_DATE` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `IMAGE` varchar(100) DEFAULT NULL,
+  `GROUP_ACCOUNT` tinyint(1) NOT NULL DEFAULT '0',
+  `FULL_NAME` varchar(100) NOT NULL,
+  `REMOVED` tinyint(1) DEFAULT '0',
+  PRIMARY KEY (`USER_NAME`),
+  UNIQUE KEY `IDX_ACCOUNT_1` (`MAIL_ADDRESS`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of ACCOUNT
+-- ----------------------------
+INSERT INTO `ACCOUNT` VALUES ('root', 'root@localhost', 'dc76e9f0c0006e8f919e0c515c66dbba3982f785', '1', 'https://github.com/takezoe/gitbucket', '2015-04-21 10:48:16', '2015-04-21 10:13:58', '2015-04-21 10:13:58', null, '0', 'root', '0');
+
+-- ----------------------------
+-- Table structure for ACTIVITY
+-- ----------------------------
+DROP TABLE IF EXISTS `ACTIVITY`;
+CREATE TABLE `ACTIVITY` (
+  `ACTIVITY_ID` int(11) NOT NULL,
+  `USER_NAME` varchar(100) NOT NULL,
+  `REPOSITORY_NAME` varchar(100) NOT NULL,
+  `ACTIVITY_USER_NAME` varchar(100) NOT NULL,
+  `ACTIVITY_TYPE` varchar(100) NOT NULL,
+  `MESSAGE` text NOT NULL,
+  `ADDITIONAL_INFO` text,
+  `ACTIVITY_DATE` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`ACTIVITY_ID`),
+  KEY `IDX_ACTIVITY_FK0` (`USER_NAME`,`REPOSITORY_NAME`),
+  KEY `IDX_ACTIVITY_FK1` (`ACTIVITY_USER_NAME`),
+  CONSTRAINT `IDX_ACTIVITY_FK0` FOREIGN KEY (`USER_NAME`, `REPOSITORY_NAME`) REFERENCES `REPOSITORY` (`USER_NAME`, `REPOSITORY_NAME`),
+  CONSTRAINT `IDX_ACTIVITY_FK1` FOREIGN KEY (`ACTIVITY_USER_NAME`) REFERENCES `ACCOUNT` (`USER_NAME`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of ACTIVITY
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for COLLABORATOR
+-- ----------------------------
+DROP TABLE IF EXISTS `COLLABORATOR`;
+CREATE TABLE `COLLABORATOR` (
+  `USER_NAME` varchar(100) NOT NULL,
+  `REPOSITORY_NAME` varchar(100) NOT NULL,
+  `COLLABORATOR_NAME` varchar(100) NOT NULL,
+  PRIMARY KEY (`USER_NAME`,`REPOSITORY_NAME`,`COLLABORATOR_NAME`),
+  KEY `IDX_COLLABORATOR_FK1` (`COLLABORATOR_NAME`),
+  CONSTRAINT `IDX_COLLABORATOR_FK0` FOREIGN KEY (`USER_NAME`, `REPOSITORY_NAME`) REFERENCES `REPOSITORY` (`USER_NAME`, `REPOSITORY_NAME`),
+  CONSTRAINT `IDX_COLLABORATOR_FK1` FOREIGN KEY (`COLLABORATOR_NAME`) REFERENCES `ACCOUNT` (`USER_NAME`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of COLLABORATOR
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for COMMIT_COMMENT
+-- ----------------------------
+DROP TABLE IF EXISTS `COMMIT_COMMENT`;
+CREATE TABLE `COMMIT_COMMENT` (
+  `USER_NAME` varchar(100) NOT NULL,
+  `REPOSITORY_NAME` varchar(100) NOT NULL,
+  `COMMIT_ID` varchar(100) NOT NULL,
+  `COMMENT_ID` int(11) NOT NULL,
+  `COMMENTED_USER_NAME` varchar(100) NOT NULL,
+  `CONTENT` text NOT NULL,
+  `FILE_NAME` varchar(255) DEFAULT NULL,
+  `OLD_LINE_NUMBER` int(11) DEFAULT NULL,
+  `NEW_LINE_NUMBER` int(11) DEFAULT NULL,
+  `REGISTERED_DATE` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `UPDATED_DATE` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `PULL_REQUEST` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of COMMIT_COMMENT
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for COMMIT_STATUS
+-- ----------------------------
+DROP TABLE IF EXISTS `COMMIT_STATUS`;
+CREATE TABLE `COMMIT_STATUS` (
+  `COMMIT_STATUS_ID` int(11) NOT NULL AUTO_INCREMENT,
+  `USER_NAME` varchar(100) NOT NULL,
+  `REPOSITORY_NAME` varchar(100) NOT NULL,
+  `COMMIT_ID` varchar(40) NOT NULL,
+  `CONTEXT` varchar(255) NOT NULL,
+  `STATE` varchar(10) NOT NULL,
+  `TARGET_URL` varchar(200) DEFAULT NULL,
+  `DESCRIPTION` text,
+  `CREATOR` varchar(100) NOT NULL,
+  `REGISTERED_DATE` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `UPDATED_DATE` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`COMMIT_STATUS_ID`),
+  UNIQUE KEY `IDX_COMMIT_STATUS_1` (`USER_NAME`,`REPOSITORY_NAME`,`COMMIT_ID`,`CONTEXT`),
+  KEY `IDX_COMMIT_STATUS_FK3` (`CREATOR`),
+  CONSTRAINT `IDX_COMMIT_STATUS_FK1` FOREIGN KEY (`USER_NAME`, `REPOSITORY_NAME`) REFERENCES `REPOSITORY` (`USER_NAME`, `REPOSITORY_NAME`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `IDX_COMMIT_STATUS_FK2` FOREIGN KEY (`USER_NAME`) REFERENCES `ACCOUNT` (`USER_NAME`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `IDX_COMMIT_STATUS_FK3` FOREIGN KEY (`CREATOR`) REFERENCES `ACCOUNT` (`USER_NAME`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of COMMIT_STATUS
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for GROUP_MEMBER
+-- ----------------------------
+DROP TABLE IF EXISTS `GROUP_MEMBER`;
+CREATE TABLE `GROUP_MEMBER` (
+  `GROUP_NAME` varchar(100) NOT NULL,
+  `USER_NAME` varchar(100) NOT NULL,
+  `MANAGER` tinyint(1) DEFAULT '0',
+  PRIMARY KEY (`GROUP_NAME`,`USER_NAME`),
+  KEY `IDX_GROUP_MEMBER_FK1` (`USER_NAME`),
+  CONSTRAINT `IDX_GROUP_MEMBER_FK0` FOREIGN KEY (`GROUP_NAME`) REFERENCES `ACCOUNT` (`USER_NAME`),
+  CONSTRAINT `IDX_GROUP_MEMBER_FK1` FOREIGN KEY (`USER_NAME`) REFERENCES `ACCOUNT` (`USER_NAME`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of GROUP_MEMBER
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for ISSUE
+-- ----------------------------
+DROP TABLE IF EXISTS `ISSUE`;
+CREATE TABLE `ISSUE` (
+  `USER_NAME` varchar(100) NOT NULL,
+  `REPOSITORY_NAME` varchar(100) NOT NULL,
+  `ISSUE_ID` int(11) NOT NULL,
+  `OPENED_USER_NAME` varchar(100) NOT NULL,
+  `MILESTONE_ID` int(11) NOT NULL,
+  `ASSIGNED_USER_NAME` varchar(100) DEFAULT NULL,
+  `TITLE` text NOT NULL,
+  `CONTENT` text,
+  `CLOSED` tinyint(1) NOT NULL,
+  `REGISTERED_DATE` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `UPDATED_DATE` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `PULL_REQUEST` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`ISSUE_ID`,`USER_NAME`,`REPOSITORY_NAME`),
+  KEY `IDX_ISSUE_FK0` (`USER_NAME`,`REPOSITORY_NAME`),
+  KEY `IDX_ISSUE_FK1` (`OPENED_USER_NAME`),
+  KEY `IDX_ISSUE_FK2` (`MILESTONE_ID`),
+  CONSTRAINT `IDX_ISSUE_FK0` FOREIGN KEY (`USER_NAME`, `REPOSITORY_NAME`) REFERENCES `REPOSITORY` (`USER_NAME`, `REPOSITORY_NAME`),
+  CONSTRAINT `IDX_ISSUE_FK1` FOREIGN KEY (`OPENED_USER_NAME`) REFERENCES `ACCOUNT` (`USER_NAME`),
+  CONSTRAINT `IDX_ISSUE_FK2` FOREIGN KEY (`MILESTONE_ID`) REFERENCES `MILESTONE` (`MILESTONE_ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of ISSUE
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for ISSUE_COMMENT
+-- ----------------------------
+DROP TABLE IF EXISTS `ISSUE_COMMENT`;
+CREATE TABLE `ISSUE_COMMENT` (
+  `USER_NAME` varchar(100) NOT NULL,
+  `REPOSITORY_NAME` varchar(100) NOT NULL,
+  `ISSUE_ID` int(11) NOT NULL,
+  `COMMENT_ID` int(11) NOT NULL,
+  `ACTION` varchar(20) NOT NULL,
+  `COMMENTED_USER_NAME` varchar(100) NOT NULL,
+  `CONTENT` text NOT NULL,
+  `REGISTERED_DATE` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `UPDATED_DATE` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`COMMENT_ID`),
+  UNIQUE KEY `IDX_ISSUE_COMMENT_1` (`USER_NAME`,`REPOSITORY_NAME`,`ISSUE_ID`,`COMMENT_ID`),
+  CONSTRAINT `IDX_ISSUE_COMMENT_FK0` FOREIGN KEY (`USER_NAME`, `REPOSITORY_NAME`, `ISSUE_ID`) REFERENCES `ISSUE` (`USER_NAME`, `REPOSITORY_NAME`, `ISSUE_ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of ISSUE_COMMENT
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for ISSUE_ID
+-- ----------------------------
+DROP TABLE IF EXISTS `ISSUE_ID`;
+CREATE TABLE `ISSUE_ID` (
+  `USER_NAME` varchar(100) NOT NULL,
+  `REPOSITORY_NAME` varchar(100) NOT NULL,
+  `ISSUE_ID` int(11) NOT NULL,
+  PRIMARY KEY (`USER_NAME`,`REPOSITORY_NAME`),
+  CONSTRAINT `IDX_ISSUE_ID_FK1` FOREIGN KEY (`USER_NAME`, `REPOSITORY_NAME`) REFERENCES `REPOSITORY` (`USER_NAME`, `REPOSITORY_NAME`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of ISSUE_ID
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for ISSUE_LABEL
+-- ----------------------------
+DROP TABLE IF EXISTS `ISSUE_LABEL`;
+CREATE TABLE `ISSUE_LABEL` (
+  `USER_NAME` varchar(100) NOT NULL,
+  `REPOSITORY_NAME` varchar(100) NOT NULL,
+  `ISSUE_ID` int(11) NOT NULL,
+  `LABEL_ID` int(11) NOT NULL,
+  PRIMARY KEY (`USER_NAME`,`REPOSITORY_NAME`,`ISSUE_ID`,`LABEL_ID`),
+  CONSTRAINT `IDX_ISSUE_LABEL_FK0` FOREIGN KEY (`USER_NAME`, `REPOSITORY_NAME`, `ISSUE_ID`) REFERENCES `ISSUE` (`USER_NAME`, `REPOSITORY_NAME`, `ISSUE_ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of ISSUE_LABEL
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for LABEL
+-- ----------------------------
+DROP TABLE IF EXISTS `LABEL`;
+CREATE TABLE `LABEL` (
+  `USER_NAME` varchar(100) NOT NULL,
+  `REPOSITORY_NAME` varchar(100) NOT NULL,
+  `LABEL_ID` int(11) NOT NULL,
+  `LABEL_NAME` varchar(100) NOT NULL,
+  `COLOR` char(6) NOT NULL,
+  PRIMARY KEY (`USER_NAME`,`REPOSITORY_NAME`,`LABEL_ID`),
+  CONSTRAINT `IDX_LABEL_FK0` FOREIGN KEY (`USER_NAME`, `REPOSITORY_NAME`) REFERENCES `REPOSITORY` (`USER_NAME`, `REPOSITORY_NAME`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of LABEL
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for MILESTONE
+-- ----------------------------
+DROP TABLE IF EXISTS `MILESTONE`;
+CREATE TABLE `MILESTONE` (
+  `USER_NAME` varchar(100) NOT NULL,
+  `REPOSITORY_NAME` varchar(100) NOT NULL,
+  `MILESTONE_ID` int(11) NOT NULL,
+  `TITLE` varchar(100) NOT NULL,
+  `DESCRIPTION` text,
+  `DUE_DATE` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `CLOSED_DATE` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`USER_NAME`,`REPOSITORY_NAME`,`MILESTONE_ID`),
+  KEY `MILESTONE_ID` (`MILESTONE_ID`),
+  CONSTRAINT `IDX_MILESTONE_FK0` FOREIGN KEY (`USER_NAME`, `REPOSITORY_NAME`) REFERENCES `REPOSITORY` (`USER_NAME`, `REPOSITORY_NAME`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of MILESTONE
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for PLUGIN
+-- ----------------------------
+DROP TABLE IF EXISTS `PLUGIN`;
+CREATE TABLE `PLUGIN` (
+  `PLUGIN_ID` varchar(100) NOT NULL,
+  `VERSION` varchar(100) NOT NULL,
+  PRIMARY KEY (`PLUGIN_ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of PLUGIN
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for PULL_REQUEST
+-- ----------------------------
+DROP TABLE IF EXISTS `PULL_REQUEST`;
+CREATE TABLE `PULL_REQUEST` (
+  `USER_NAME` varchar(100) NOT NULL,
+  `REPOSITORY_NAME` varchar(100) NOT NULL,
+  `ISSUE_ID` int(11) NOT NULL,
+  `BRANCH` varchar(100) NOT NULL,
+  `REQUEST_USER_NAME` varchar(100) NOT NULL,
+  `REQUEST_REPOSITORY_NAME` varchar(100) NOT NULL,
+  `REQUEST_BRANCH` varchar(100) NOT NULL,
+  `COMMIT_ID_FROM` varchar(40) NOT NULL,
+  `COMMIT_ID_TO` varchar(40) NOT NULL,
+  PRIMARY KEY (`USER_NAME`,`REPOSITORY_NAME`,`ISSUE_ID`),
+  CONSTRAINT `IDX_PULL_REQUEST_FK0` FOREIGN KEY (`USER_NAME`, `REPOSITORY_NAME`, `ISSUE_ID`) REFERENCES `ISSUE` (`USER_NAME`, `REPOSITORY_NAME`, `ISSUE_ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of PULL_REQUEST
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for REPOSITORY
+-- ----------------------------
+DROP TABLE IF EXISTS `REPOSITORY`;
+CREATE TABLE `REPOSITORY` (
+  `USER_NAME` varchar(100) NOT NULL,
+  `REPOSITORY_NAME` varchar(100) NOT NULL,
+  `PRIVATE` tinyint(1) NOT NULL,
+  `DESCRIPTION` text,
+  `DEFAULT_BRANCH` varchar(100) DEFAULT NULL,
+  `REGISTERED_DATE` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `UPDATED_DATE` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `LAST_ACTIVITY_DATE` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `ORIGIN_USER_NAME` varchar(100) DEFAULT NULL,
+  `ORIGIN_REPOSITORY_NAME` varchar(100) DEFAULT NULL,
+  `PARENT_USER_NAME` varchar(100) DEFAULT NULL,
+  `PARENT_REPOSITORY_NAME` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`USER_NAME`,`REPOSITORY_NAME`),
+  CONSTRAINT `IDX_REPOSITORY_FK0` FOREIGN KEY (`USER_NAME`) REFERENCES `ACCOUNT` (`USER_NAME`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of REPOSITORY
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for SSH_KEY
+-- ----------------------------
+DROP TABLE IF EXISTS `SSH_KEY`;
+CREATE TABLE `SSH_KEY` (
+  `USER_NAME` varchar(100) NOT NULL,
+  `SSH_KEY_ID` int(11) NOT NULL,
+  `TITLE` varchar(100) NOT NULL,
+  `PUBLIC_KEY` text NOT NULL,
+  PRIMARY KEY (`USER_NAME`,`SSH_KEY_ID`),
+  CONSTRAINT `IDX_SSH_KEY_FK0` FOREIGN KEY (`USER_NAME`) REFERENCES `ACCOUNT` (`USER_NAME`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of SSH_KEY
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for WEB_HOOK
+-- ----------------------------
+DROP TABLE IF EXISTS `WEB_HOOK`;
+CREATE TABLE `WEB_HOOK` (
+  `USER_NAME` varchar(100) NOT NULL,
+  `REPOSITORY_NAME` varchar(100) NOT NULL,
+  `URL` varchar(200) NOT NULL,
+  PRIMARY KEY (`USER_NAME`,`REPOSITORY_NAME`,`URL`),
+  CONSTRAINT `IDX_WEB_HOOK_FK0` FOREIGN KEY (`USER_NAME`, `REPOSITORY_NAME`) REFERENCES `REPOSITORY` (`USER_NAME`, `REPOSITORY_NAME`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of WEB_HOOK
+-- ----------------------------
+
+-- ----------------------------
+-- View structure for ISSUE_OUTLINE_VIEW
+-- ----------------------------
+DROP VIEW IF EXISTS `ISSUE_OUTLINE_VIEW`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`%` SQL SECURITY DEFINER VIEW `ISSUE_OUTLINE_VIEW` AS select `A`.`USER_NAME` AS `USER_NAME`,`A`.`REPOSITORY_NAME` AS `REPOSITORY_NAME`,`A`.`ISSUE_ID` AS `ISSUE_ID`,ifnull(`B`.`COMMENT_COUNT`,0) AS `COMMENT_COUNT` from (`ISSUE` `A` left join `ISSUE_VIEW` `B` on(((`A`.`USER_NAME` = `B`.`USER_NAME`) and (`A`.`REPOSITORY_NAME` = `B`.`REPOSITORY_NAME`) and (`A`.`ISSUE_ID` = `B`.`ISSUE_ID`)))) ;
+
+-- ----------------------------
+-- View structure for ISSUE_VIEW
+-- ----------------------------
+DROP VIEW IF EXISTS `ISSUE_VIEW`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`%` SQL SECURITY DEFINER VIEW `ISSUE_VIEW` AS select `B`.`USER_NAME` AS `USER_NAME`,`B`.`REPOSITORY_NAME` AS `REPOSITORY_NAME`,`B`.`ISSUE_ID` AS `ISSUE_ID`,count(`B`.`COMMENT_ID`) AS `COMMENT_COUNT` from `ISSUE_COMMENT` `B` where (`B`.`ACTION` in ('comment','close_comment','reopen_comment')) group by `B`.`USER_NAME`,`B`.`REPOSITORY_NAME`,`B`.`ISSUE_ID` ;

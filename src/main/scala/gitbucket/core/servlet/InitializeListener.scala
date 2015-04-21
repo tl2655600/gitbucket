@@ -179,7 +179,8 @@ class InitializeListener extends ServletContextListener with SystemSettingsServi
     if(dataDir != null){
       System.setProperty("gitbucket.home", dataDir)
     }
-    org.h2.Driver.load()
+    //org.h2.Driver.load()
+    Class.forName("com.mysql.jdbc.Driver")
 
     using(getConnection()){ conn =>
       // Migration

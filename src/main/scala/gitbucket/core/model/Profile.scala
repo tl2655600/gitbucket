@@ -28,7 +28,8 @@ trait Profile {
 }
 
 trait ProfileProvider { self: Profile =>
-  val profile = slick.driver.H2Driver
+  //val profile = slick.driver.H2Driver
+  val profile = slick.dirver.MySQLDriver
 }
 
 trait CoreProfile extends ProfileProvider with Profile
